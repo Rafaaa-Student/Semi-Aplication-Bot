@@ -1,0 +1,116 @@
+import discord
+from discord.ext import commands
+from bagian_awal import gen_pass  # Impor fungsi gen_pass
+import random  # Untuk fitur tambahan, jika diperlukan
+
+# Konfigurasi intents
+intents = discord.Intents.default()
+intents.message_content = True
+
+# Prefix command untuk bot
+bot = commands.Bot(command_prefix='$', intents=intents)
+
+emoji_list = [
+    "😀", "😂", "🤣", "😍", "🥰", "😎", "🤔", 
+    "😴", "🤖", "👻", "🦄", "🌟", "🔥", "🎉",
+    "🍕", "☕", "🏆", "🎮", "🚀"
+]
+
+@bot.event
+async def on_ready():
+    print(f'We have logged in as {bot.user}')
+
+@bot.command()
+async def Fungsi(ctx):
+    await ctx.send(
+        """1. $Halo.
+2. $Goodbye.
+3. $Apalah.
+4. $Passgen. Dapat melakukan custom password = "$Passgen 11(angka)" maka hasilnya = !@#>-+=*^!?(11 angka password)
+5. $Menambahkan. Contohnya : "$Menambahkan 1(angka) 2(angka)" maka hasilnya = 3(tiga)
+6. $Dadu.
+7. $Ulang.
+8. $Emoji.
+9. $Koin.
+10. $Fungsi_Rahasia.
+
+Note:
+Cara menggunakan "$Ulang" contohnya = $Ulang 3(angka) Halo(huruf/kata)
+Maka yang muncul adalah:
+Halo
+Halo
+Halo"""
+    )
+
+@bot.command()
+async def Fungsi_Rahasia(ctx):
+    await ctx.send(f"Ketik : $ChatGPT")
+
+@bot.command()
+async def Halo(ctx):
+    await ctx.send(f'Hi! Aku bot : {bot.user}!')
+
+@bot.command()
+async def Goodbye(ctx):
+    await ctx.send("\U0001f642")
+
+@bot.command()
+async def Apalah(ctx, count_heh: int = 5):
+    await ctx.send("he" * count_heh)
+
+@bot.command()
+async def Passgen(ctx, count_heh = 10):
+    await ctx.send(gen_pass(count_heh))
+
+@bot.command()
+async def Menambahkan(ctx, left: int, right: int):
+    """Menambahkan 2 angka."""
+    await ctx.send(left + right)
+
+@bot.command()
+async def Dadu(ctx):
+    """Mengocok dadu."""
+    dice = random.randint(1, 6)
+    if dice >= 4:
+        await ctx.send(f"Kamu beruntung SEKALI mendapatkan angka dadu: {dice}")
+    elif dice <=3:
+        await ctx.send(f"Kamu KURANG beruntung mendapatkan angka dadu: {dice}")
+
+@bot.command()
+async def Ulang(ctx, times: int, content: str = "Mengulang...."):
+    """Mengulang kata tertentu sejumlah times."""
+    for i in range(times):
+        await ctx.send(content)
+
+@bot.command()
+async def Emoji(ctx):
+    """Mengirimkan emoji acak."""
+    chosen_emoji = random.choice(emoji_list)
+    await ctx.send(f"Kamu mendapatkan emoji: {chosen_emoji}")
+
+@bot.command()
+async def Koin(ctx):
+    hasil = random.choice(["Kepala", "Ekor"])
+    await ctx.send(f"Hasil lemparan koin: ***{hasil}***")
+
+@bot.command()
+async def ChatGPT(ctx):
+    await ctx.send(f"Bro berpikir aku seorang Chat GPT😹")
+
+@bot.command()
+async def wkwk(ctx):
+    await ctx.send(f"Lucu lu wir😹")
+
+@bot.command()
+async def lucu_banget_lho_rek(ctx):
+    await ctx.send(f"Tertangkap kau suki liar😹")
+
+@bot.command()
+async def pemenangnya_tetap_chez(ctx):
+    await ctx.send(f"Halah nyocot😹") 
+
+@bot.command()
+async def bio_chef_arnold_mewakili_plis(ctx):
+    await ctx.send(f"Caper lu bocil fomo'😹")
+
+bot.run("MTMxOTk2MTEwOTA3NTMzMzE0MQ.G48Rop.TKLK5q8I3VFU2bC5OX_tZxE8OhHoDasO1LVXz8")
