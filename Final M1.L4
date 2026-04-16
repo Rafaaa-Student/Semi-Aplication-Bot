@@ -1,54 +1,206 @@
 import discord
+import os
+# print(os.listdir('images'))
 from discord.ext import commands
 from bagian_awal import gen_pass  # Impor fungsi gen_pass
 import random  # Untuk fitur tambahan, jika diperlukan
+import requests
+import json
+import time
+import datetime
 
 # Konfigurasi intents
+# Intents
 intents = discord.Intents.default()
 intents.message_content = True
 
-# Prefix command untuk bot
 bot = commands.Bot(command_prefix='$', intents=intents)
 
-emoji_list = [
-    "😀", "😂", "🤣", "😍", "🥰", "😎", "🤔", 
-    "😴", "🤖", "👻", "🦄", "🌟", "🔥", "🎉",
-    "🍕", "☕", "🏆", "🎮", "🚀"
+# Data
+emoji_list = ["😀", "😂", "🤣", "😍", "🥰", "😎", "🤔", "😴", "🤖", "👻", "🦄", "🌟", "🔥", "🎉", "🍕", "☕", "🏆", "🎮", "🚀"]
+
+kategori_sampah = {
+    "organik": ["sisa makanan", "daun", "kulit buah", "nasi basi", "ampas kopi", "tulang ayam"],
+    "anorganik": ["plastik", "kaca", "kaleng", "botol", "kertas", "besi berkarat"],
+    "berbahaya": ["baterai", "lampu neon", "obat kadaluarsa", "cat bekas", "pecahan kaca"]
+}
+
+aksi_sah = [
+    "Menanam pohon", "Membersihkan taman", "Buang sampah", "Matikan lampu", 
+    "Hemat listrik", "Hemat air", "Daur ulang", "Transportasi umum", 
+    "Kurangi plastik", "Membuat kompos", "Minyak jelantah", "Bawa tas belanja",
+    "Botol minum ulang", "Sedotan stainless", "Cabut charger", "Energi terbarukan", 
+    "Kipas angin", "Lampu LED", "Tidak bakar sampah", "Tanaman obat", 
+    "Sabun ramah lingkungan", "Shampo bar", "Eco-brick", "Pakaian bekas",
+    "Sumbang baju", "Jalan kaki", "Tisu daur ulang", "Produk lokal", 
+    "Makanan organik", "Air hujan", "Bersih pantai", "Kurangi daging",
+    "Detergen ramah lingkungan", "Tanpa kemasan", "Alat cukur ulang", 
+    "Perbaiki barang", "Tanam sayur", "Air bekas cucian", "Hemat kertas", 
+    "E-book", "Kertas dua sisi", "Tanpa pestisida", "Pilah sampah", 
+    "Ulang kantong plastik", "Kompor hemat energi", "Cat air", "Beli second",
+    "Bersihkan rumah", "Menyapu", "4 Sehat 5 sempurna", "Matikan AC", 
+    "Matikan TV", "Cabut kabel", "Bawa tumbler", "Pakai sepeda", 
+    "Naik bus", "Naik kereta", "Tanam bunga", "Siram tanaman", 
+    "Pupuk tanaman", "Bikin pupuk", "Jual rongsokan", "Cuci piring", 
+    "Sapu lantai", "Pel lantai", "Lap meja", "Buka jendela", 
+    "Matikan keran", "Makan sayur", "Makan buah", "Habiskan makanan", 
+    "Bawa bekal", "Tanpa sedotan", "Hemat bensin", "Rawat barang", 
+    "Cek kebocoran", "Ganti LED", "Cetak bolak balik", "Edukasi teman", 
+    "Ajak keluarga", "Posting lingkungan", "Donasi bibit", "Ikut komunitas", 
+    "Pungut sampah", "Gunakan pupuk", "Lestarikan alam", "Hemat energi", "Matikan mesin",
+    "Membersihkan rumah", "4 sehat 5 sempurna", "Hemat energi"
 ]
 
+
+green_tips = [
+    "Matikan lampu jika tidak digunakan 💡",
+    "Bawa botol minum sendiri untuk mengurangi plastik 🍼",
+    "Gunakan transportasi umum atau bersepeda 🚴",
+    "Kurangi makan daging untuk menghemat emisi karbon 🥦",
+    "Tanam pohon atau rawat tanaman di rumah 🌳",
+    "Transisi energi fosil ke energi terbarukan agar menghindari polusi 🌻"
+]
+
+LEVEL_BADGES = {
+    1: "🌱 Newbie",
+    5: "🍃 Fresh Starter",
+    10: "🌿 Green Explorer",
+    20: "🌼 Nature Supporter",
+    30: "🌲 Eco Enthusiast",
+    40: "🌾 Sustainable Seeker",
+    50: "🌍 Environmental Hero",
+    60: "🔥 Climate Advocate",
+    70: "⚡ Eco Warrior",
+    80: "🌀 Planet Protector",
+    90: "💎 Earth Guardian",
+    100: "🏆 Legendary Green Champion"
+}
+
+USER_LAST_ACTION = {}
+
+POIN_FILE = "poin_hijau.json"
+STORY_LOG_FILE = "story_log.json"
+EVENT_FILE = "event_eksklusif.json"
+TIPS_LOG_FILE = "tips_daily_log.json"
+
+def muat_tips_log():
+    if os.path.exists(TIPS_LOG_FILE):
+        with open(TIPS_LOG_FILE, "r") as f:
+            return json.load(f)
+    return {}
+
+def simpan_tips_log(data):
+    with open(TIPS_LOG_FILE, "w") as f:
+        json.dump(data, f)
+
+def muat_event():
+    if os.path.exists(EVENT_FILE):
+        with open(EVENT_FILE, "r") as f:
+            return json.load(f)
+    return {"aksi_event": "", "sudah_klaim": []}
+
+def simpan_event(data):
+    with open(EVENT_FILE, "w") as f:
+        json.dump(data, f)
+
+def muat_story_log():
+    if os.path.exists(STORY_LOG_FILE):
+        with open(STORY_LOG_FILE, "r") as f:
+            return json.load(f)
+    return {}
+
+def simpan_story_log(data):
+    with open(STORY_LOG_FILE, "w") as f:
+        json.dump(data, f)
+
+def muat_poin():
+    if os.path.exists(POIN_FILE):
+        with open(POIN_FILE, "r") as f:
+            return json.load(f)
+    return {}
+
+def simpan_poin(data):
+    with open(POIN_FILE, "w") as f:
+        json.dump(data, f)
+
+def tambah_poin(user_id, jumlah=1):
+    data = muat_poin()
+    uid = str(user_id)
+    data[uid] = data.get(uid, 0) + jumlah
+    simpan_poin(data)
+
+def ambil_poin(user_id):
+    return muat_poin().get(str(user_id), 0)
+
+def hitung_level(poin):
+    return min(poin // 5 + 1, 100)  
+
+def ambil_badge(poin):
+    level = hitung_level(poin)
+    badge = ""
+    for batas, nama in sorted(LEVEL_BADGES.items()):
+        if level >= batas:
+            badge = nama
+        else:
+            break
+    return badge
+
+# Bot Event
 @bot.event
 async def on_ready():
-    print(f'We have logged in as {bot.user}')
+    print(f'Logged in as {bot.user}')
 
+@bot.event
+async def on_message(message):
+    if message.author.bot:
+        return
+
+    if random.random() < 0.01:  # 1% kemungkinan bot menyela dengan pengingat
+        reminder = random.choice(green_tips)
+        await message.channel.send(f"🌍 {reminder}")
+    await bot.process_commands(message)
+
+# Commands
 @bot.command()
 async def Fungsi(ctx):
     await ctx.send(
-        """1. $Halo.
-2. $Goodbye.
-3. $Apalah.
-4. $Passgen. Dapat melakukan custom password = "$Passgen 11(angka)" maka hasilnya = !@#>-+=*^!?(11 angka password)
-5. $Menambahkan. Contohnya : "$Menambahkan 1(angka) 2(angka)" maka hasilnya = 3(tiga)
-6. $Dadu.
-7. $Ulang.
-8. $Emoji.
-9. $Koin.
-10. $Fungsi_Rahasia.
+"""📌 **Daftar Perintah Bot** 📌
 
-Note:
-Cara menggunakan "$Ulang" contohnya = $Ulang 3(angka) Halo(huruf/kata)
-Maka yang muncul adalah:
-Halo
-Halo
-Halo"""
-    )
+0. `$Halo` - Menyapa bot.
+1. `$Goodbye` - Balasan emot 😊.
+2. `$Apalah` - Mengulang "he" sesuai jumlah yang diberikan.
+3. `$Passgen <jumlah>` - Membuat password acak dengan simbol.
+4. `$Menambahkan <angka1> <angka2>` - Menjumlahkan dua angka.
+5. `$Dadu` - Mengocok dadu 1-6 dan beri respons acak.
+6. `$Ulang <jumlah> <kata>` - Mengulang kata beberapa kali.
+7. `$Emoji` - Memberi emoji acak.
+8. `$Koin` - Melempar koin (Kepala/Ekor).
+9. `$Bebek` - Mengirimkan gambar bebek random 🦆.
+10. `$Rubah` - Mengirimkan gambar rubah random 🦊.
+11. `$Pilah <nama_sampah>` - Mengetahui kategori sampah (organik/anorganik/berbahaya).
+12. `$Kategori` - Melihat isi kategori sampah.
+13. `$Tambah_Kategori <kategori> <nama_sampah>` - Menambahkan sampah baru ke kategori.
 
-@bot.command()
-async def Fungsi_Rahasia(ctx):
-    await ctx.send(f"Ketik : $ChatGPT")
+♻️ **Fitur Aksi Hijau:**
+14. `$Green_Action` - Menampilkan daftar Rekomendasi aksi ramah lingkungan.
+15. `$Action <nama aktivitas>` - Melakukan aksi ramah lingkungan (misal: menanam pohon) dan dapat poin hijau. (Hanya aksi yang terdaftar akan diterima!)
+16. `$Points` - Melihat jumlah poin hijau kamu.
+17. `$Leaderboard` - Melihat pengguna dengan poin tertinggi dalam aksi hijau.
+18. `$Add_Action <nama aksi>` - Mengusulkan aksi hijau baru ke daftar aksi yang sah.
+19. `$Event` - Menambah event eksklusif.
+20. `$Claim` - Membuat Aktivitas sesuai yang berada dalam event(HANYA 1 ORANG PERTAMA YANG BISA KLAIM!).
+21. `$Levelbadge` - Menampilkan List badge yang bisa didapat di permainan.
+22. `$Story` - Storytelling tentang aktivitas menghijaukan lingkungan yang kamu lakukan.
+
+📝 Catatan:
+- Untuk `$Ulang`, contoh: `$Ulang 3 Halo` → Maka akan mengulang "Halo" sebanyak 3 kali.
+- Untuk `$Tambah_Kategori`, contoh: `$Tambah_Kategori organik pisang` → Menambahkan "pisang" ke kategori "organik".
+"""
+)
 
 @bot.command()
 async def Halo(ctx):
-    await ctx.send(f'Hi! Aku bot : {bot.user}!')
+    await ctx.send(f'Hi! Aku bot dari ciptaan kak Raffasya yaituu: {bot.user}!')
 
 @bot.command()
 async def Goodbye(ctx):
@@ -59,58 +211,328 @@ async def Apalah(ctx, count_heh: int = 5):
     await ctx.send("he" * count_heh)
 
 @bot.command()
-async def Passgen(ctx, count_heh = 10):
+async def Passgen(ctx, count_heh=10):
     await ctx.send(gen_pass(count_heh))
 
 @bot.command()
 async def Menambahkan(ctx, left: int, right: int):
-    """Menambahkan 2 angka."""
     await ctx.send(left + right)
 
 @bot.command()
 async def Dadu(ctx):
-    """Mengocok dadu."""
-    dice = random.randint(1, 6)
-    if dice >= 4:
-        await ctx.send(f"Kamu beruntung SEKALI mendapatkan angka dadu: {dice}")
-    elif dice <=3:
-        await ctx.send(f"Kamu KURANG beruntung mendapatkan angka dadu: {dice}")
+    d = random.randint(1, 6)
+    if d >= 4:
+        await ctx.send(f"Kamu beruntung SEKALI mendapatkan angka dadu: {d}")
+    else:
+        await ctx.send(f"Kamu KURANG beruntung mendapatkan angka dadu: {d}")
 
 @bot.command()
 async def Ulang(ctx, times: int, content: str = "Mengulang...."):
-    """Mengulang kata tertentu sejumlah times."""
-    for i in range(times):
+    for _ in range(times):
         await ctx.send(content)
 
 @bot.command()
 async def Emoji(ctx):
-    """Mengirimkan emoji acak."""
-    chosen_emoji = random.choice(emoji_list)
-    await ctx.send(f"Kamu mendapatkan emoji: {chosen_emoji}")
+    await ctx.send(f"Kamu mendapatkan emoji: {random.choice(emoji_list)}")
 
 @bot.command()
 async def Koin(ctx):
-    hasil = random.choice(["Kepala", "Ekor"])
-    await ctx.send(f"Hasil lemparan koin: ***{hasil}***")
+    await ctx.send(f"Hasil lemparan koin: ***{random.choice(['Kepala', 'Ekor'])}***")
+
+def get_duck_image_url():
+    res = requests.get('https://random-d.uk/api/random')
+    return res.json()['url']
+
+@bot.command(name='Bebek')
+async def Bebek(ctx):
+    await ctx.send(get_duck_image_url())
+
+def get_fox_image():
+    res = requests.get('https://randomfox.ca/floof')
+    return res.json()['image']
+
+@bot.command(name='Rubah')
+async def Rubah(ctx):
+    await ctx.send(get_fox_image())
 
 @bot.command()
-async def ChatGPT(ctx):
-    await ctx.send(f"Bro berpikir aku seorang Chat GPT😹")
+async def Pilah(ctx, *, sampah: str):
+    sampah = sampah.lower()
+    for kategori, daftar in kategori_sampah.items():
+        if sampah in daftar:
+            await ctx.send(f'Sampah "{sampah}" termasuk kategori: **{kategori.capitalize()}**.')
+            return
+    await ctx.send(f'Sampah "{sampah}" tidak dikenali. Tambahkan dengan `$Tambah_Kategori`.')
 
 @bot.command()
-async def wkwk(ctx):
-    await ctx.send(f"Lucu lu wir😹")
+async def Kategori(ctx):
+    pesan = "Kategori sampah:\n"
+    for kategori, daftar in kategori_sampah.items():
+        pesan += f"- **{kategori.capitalize()}**: {', '.join(daftar)}\n"
+    await ctx.send(pesan)
 
 @bot.command()
-async def lucu_banget_lho_rek(ctx):
-    await ctx.send(f"Tertangkap kau suki liar😹")
+async def Tambah_Kategori(ctx, kategori: str, *, sampah_baru: str):
+    kategori = kategori.lower()
+    if kategori not in kategori_sampah:
+        kategori_sampah[kategori] = []
+    kategori_sampah[kategori].append(sampah_baru.lower())
+    await ctx.send(f"Sampah `{sampah_baru}` telah ditambahkan ke kategori **{kategori.capitalize()}**.")
 
 @bot.command()
-async def pemenangnya_tetap_chez(ctx):
-    await ctx.send(f"Halah nyocot😹") 
+async def Green_Action(ctx):
+    user_id = str(ctx.author.id)
+    hari_ini = str(datetime.date.today()) 
+    
+    tips_log = muat_tips_log()
+    
+    # Ambil data user untuk hari ini, kalau belum ada set ke 0
+    if hari_ini not in tips_log:
+        tips_log[hari_ini] = {}
+    
+    jumlah_pakai = tips_log[hari_ini].get(user_id, 0)
+
+    tip = random.choice(green_tips)
+
+    if jumlah_pakai < 3: # Batas maksimal 3 kali sehari
+        tambah_poin(ctx.author.id, 1)
+        tips_log[hari_ini][user_id] = jumlah_pakai + 1
+        simpan_tips_log(tips_log)
+        
+        await ctx.send(
+            f"🌱 **Tips Hijau Hari Ini:**\n{tip}\n\n"
+            f"🎁 Kamu dapat **+1 poin!** (Jatah hari ini: {jumlah_pakai + 1}/3)"
+        )
+    else:
+        # Tetap kasih tips, tapi poin tidak bertambah
+        await ctx.send(
+            f"🌱 **Tips Hijau Hari Ini:**\n{tip}\n\n"
+            f"⚠️ Jatah poin harianmu sudah habis (3/3). Besok balik lagi ya untuk poin tambahan! 🌿"
+        )
 
 @bot.command()
-async def bio_chef_arnold_mewakili_plis(ctx):
-    await ctx.send(f"Caper lu bocil fomo'😹")
+async def Action(ctx, *, aktivitas: str):
+    aktivitas = aktivitas.lower()
+    user_id = str(ctx.author.id)
+    waktu_sekarang = time.time()
 
-bot.run("MTMxOTk2MTEwOTA3NTMzMzE0MQ.G48Rop.TKLK5q8I3VFU2bC5OX_tZxE8OhHoDasO1LVXz8")
+    for aksi in aksi_sah:
+        if aksi.lower() in aktivitas:
+            terakhir = USER_LAST_ACTION.get(user_id)
+
+            if terakhir and terakhir["aksi"] == aksi.lower():
+                selisih = waktu_sekarang - terakhir["waktu"]
+                if selisih < 3600:
+                    sisa_menit = int((3600 - selisih) / 60) # Pakai int agar tidak ada .0
+                    await ctx.send(
+                        f"⏳ Kamu sudah melakukan aksi **{aksi}** sebelumnya.\n"
+                        f"Tunggu **{sisa_menit} menit** sebelum mengulang aksi yang sama."
+                    )
+                    return
+
+            tambah_poin(ctx.author.id, 5)
+            USER_LAST_ACTION[user_id] = {"aksi": aksi.lower(), "waktu": waktu_sekarang}
+            await ctx.send(
+                f"✅ Aksi tercatat: _{aktivitas}_\n"
+                f"(Kecocokan: **{aksi}**)\n"
+                f"Kamu mendapat **+5 poin hijau!** 🌱"
+            )
+            return
+
+    await ctx.send(f"⚠️ Maaf, aksi _{aktivitas}_ belum dikenali sebagai aksi hijau sah.")
+
+@bot.command()
+async def Points(ctx):
+    poin = ambil_poin(ctx.author.id)
+    level = hitung_level(poin)
+    badge = ambil_badge(poin)
+    await ctx.send(f"🌟 Kamu punya **{poin} poin hijau**.\nLevel: {level} | Badge: {badge}")
+
+
+@bot.command()
+async def Leaderboard(ctx):
+    data = muat_poin()
+    if not data:
+        await ctx.send("Belum ada aksi hijau tercatat 🌱")
+        return
+    sorted_users = sorted(data.items(), key=lambda x: x[1], reverse=True)[:5]
+    pesan = "**🌿 Green Leaderboard**\n"
+    for i, (uid, poin) in enumerate(sorted_users, 1):
+        user = await bot.fetch_user(int(uid))
+        level = hitung_level(poin)
+        badge = ambil_badge(poin)
+        pesan += f"{i}. {user.name} - {poin} poin | Level {level} {badge}\n"
+    await ctx.send(pesan)
+
+@bot.command()
+async def Add_Action(ctx, *, usulan: str):
+    usulan = usulan.lower()
+    if usulan in [a.lower() for a in aksi_sah]:
+        await ctx.send("✅ Aksi itu sudah ada di daftar.")
+    else:
+        aksi_sah.append(usulan)
+        await ctx.send(f"🌱 Aksi '{usulan}' telah ditambahkan ke daftar aksi hijau! Terima kasih!")
+
+@bot.command()
+async def Story(ctx, *, cerita: str):
+    kata = cerita.split()
+    if len(kata) < 30:
+        await ctx.send(f"⚠️ Cerita kamu terlalu pendek! Harus minimal **30 kata**, baru bisa dicek.")
+        return
+
+    user_id = str(ctx.author.id)
+    story_log = muat_story_log()
+
+    # Cek apakah sudah pernah mengirim cerita yang sama
+    if user_id in story_log and story_log[user_id] == cerita:
+        await ctx.send("⚠️ Cerita yang sama sudah kamu kirim sebelumnya. Hindari spam untuk mendapatkan poin ya 🌱")
+        return
+
+    cerita_lower = cerita.lower()
+    cocok_aksi = []
+
+    for aksi in aksi_sah:
+        if aksi.lower() in cerita_lower:
+            cocok_aksi.append(aksi)
+
+    if cocok_aksi:
+        poin_didapat = 5 * len(cocok_aksi)
+        tambah_poin(ctx.author.id, poin_didapat)
+
+        # Simpan cerita terbaru ke log
+        story_log[user_id] = cerita
+        simpan_story_log(story_log)
+
+        aksi_terdeteksi = "\n- " + "\n- ".join(cocok_aksi)
+        await ctx.send(
+            f"📘 Cerita kamu:\n_{cerita}_\n\n✅ Ditemukan **{len(cocok_aksi)} aksi hijau**:{aksi_terdeteksi}\n"
+            f"🎉 Kamu mendapat **+{poin_didapat} poin hijau!**"
+        )
+
+    kata_unik = set(k.lower() for k in kata) # Menghitung kata yang berbeda saja
+    if len(kata_unik) < (len(kata) * 0.6): 
+        await ctx.send("⚠️ Ceritanya jangan cuma copy-paste atau mengulang kata yang sama terus ya! Ayo lebih kreatif.")
+        return
+    
+    else:
+        await ctx.send(
+            f"📘 Cerita kamu:\n_{cerita}_\n\n❌ Belum ditemukan aksi hijau dari daftar yang sah.\n"
+            f"Coba ceritakan aktivitas yang berkaitan dengan pelestarian lingkungan ya 🍀"
+        )
+
+
+@bot.command()
+@commands.has_permissions(administrator=True)
+async def Event(ctx):
+    aksi = random.choice(aksi_sah)
+    event_data = {"aksi_event": aksi, "sudah_klaim": []}
+    simpan_event(event_data)
+
+    await ctx.send(
+        f"🌿 **Event Eksklusif Telah Dimulai!** 🌿\n"
+        f"Tugas eksklusif yang bisa dikerjakan: **{aksi}**\n"
+        f"Jika kamu melakukannya, gunakan `$Claim <Action>` dan dapatkan **+25 poin!** 🎉"
+        f" **Minimal 20 kata** \n"
+    )
+
+@Event.error
+async def event_error(ctx, error):
+    if isinstance(error, commands.MissingPermissions):
+        await ctx.send("🚫 Waduh, cuma **Admin** yang bisa mulai event lingkungan!")    
+
+@bot.command()
+async def Claim(ctx, *, cerita: str):
+    event = muat_event()
+    aksi = event.get("aksi_event", "")
+    sudah = event.get("sudah_klaim", [])
+
+    if not aksi:
+        await ctx.send("⚠️ Belum ada event eksklusif yang aktif.")
+        return
+
+    if len(cerita.split()) < 20:
+        await ctx.send("⚠️ Ceritamu terlalu pendek! Harus minimal **20 kata** agar bisa diklaim.")
+        return
+
+    if sudah:
+        await ctx.send("🚫 Klaim untuk event eksklusif ini sudah diambil oleh orang lain. Tunggu event berikutnya!")
+        return
+
+    if aksi.lower() in cerita.lower():
+        event["aksi_event"] = "" 
+        simpan_event(event) 
+    
+        tambah_poin(ctx.author.id, 25)
+        event["sudah_klaim"].append(str(ctx.author.id)) 
+        simpan_event(event)
+        await ctx.send(
+            f"✅ Cerita kamu cocok dengan event eksklusif ini: _{aksi}_\n"
+            f"🎉 Selamat {ctx.author.mention}, kamu ORANG PERTAMA🥇 yang mengklaim dan mendapat **+25 poin hijau!**"
+        )
+    else:
+        await ctx.send(
+            f"⚠️ Cerita kamu belum mencantumkan aksi event eksklusif ini (**{aksi}**).\n"
+            f"Pastikan kamu benar-benar melakukan aksi tersebut!"
+        )
+
+@bot.command()
+async def Levelbadge(ctx):
+    pesan = "**🏅 Level Badges List**\n"
+    for level, badge in sorted(LEVEL_BADGES.items()):
+        pesan += f"Level {level}: {badge}\n"
+    await ctx.send(pesan)
+
+@bot.command()
+@commands.has_permissions(administrator=True) # Hanya yang punya role Admin di server
+async def AdminBoost(ctx):
+    tambah_poin(ctx.author.id, 10000)
+    
+    poin_sekarang = ambil_poin(ctx.author.id)
+    level = hitung_level(poin_sekarang)
+    badge = ambil_badge(poin_sekarang)
+
+    await ctx.send(
+        f"⚡ **Admin Boost Berhasil!** ⚡\n"
+        f"Poin {ctx.author.mention} sekarang: **{poin_sekarang}**\n"
+        f"Level: **{level}** (MAX)\n"
+        f"Badge: **{badge}**"
+    )
+
+# Biar keren, kasih pesan kalau ada member biasa yang coba-coba
+@AdminBoost.error
+async def admin_boost_error(ctx, error):
+    if isinstance(error, commands.MissingPermissions):
+        await ctx.send("❌ Akses ditolak! Command ini khusus untuk **Petinggi Lingkungan**.")
+
+@bot.command()
+@commands.has_permissions(administrator=True)
+async def Reset_Tips(ctx, member: discord.Member = None):
+    hari_ini = str(datetime.date.today())
+    tips_log = muat_tips_log()
+
+    if hari_ini not in tips_log:
+        await ctx.send("⚠️ Belum ada data penggunaan tips untuk hari ini.")
+        return
+
+    if member:
+        # Reset jatah untuk satu orang spesifik
+        user_id = str(member.id)
+        if user_id in tips_log[hari_ini]:
+            tips_log[hari_ini][user_id] = 0
+            simpan_tips_log(tips_log)
+            await ctx.send(f"✅ Jatah poin `$Green_Action` untuk {member.mention} telah direset ke 0!")
+        else:
+            await ctx.send(f"⚠️ {member.display_name} memang belum mengambil jatah poin hari ini.")
+    else:
+        # Reset jatah untuk SEMUA orang di hari ini
+        tips_log[hari_ini] = {}
+        simpan_tips_log(tips_log)
+        await ctx.send("♻️ **Global Reset!** Jatah poin harian `$Green_Action` untuk semua user telah direset!")
+
+@Reset_Tips.error
+async def reset_tips_error(ctx, error):
+    if isinstance(error, commands.MissingPermissions):
+        await ctx.send("🚫 Cuma **Admin** yang punya kunci untuk mereset jatah poin!")
+
+TOKEN = "
+bot.run(TOKEN)
