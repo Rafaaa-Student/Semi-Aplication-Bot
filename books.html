@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% block title %}Books - Bot Raffasya VII{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h2>📚 Koleksi Buku</h2>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    {% for book in books %}
+                    <div class="col-md-4 mb-3">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">{{ book.judul }}</h5>
+                                <p class="card-text">Harga: {{ book.harga }}</p>
+                                <p class="card-text">{{ book.deskripsi[:100] }}...</p>
+                                <a href="{{ book.url }}" class="btn btn-primary" target="_blank">Lihat Detail</a>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
