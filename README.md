@@ -1,4 +1,4 @@
-# Bot Raffasya VII 🌿🤖
+# Bot Update VII 🌿🤖
 
 Bot Discord interaktif yang menggabungkan **gamifikasi aksi hijau**, **web scraping**, dan **dashboard website** untuk mendorong gaya hidup ramah lingkungan.
 
