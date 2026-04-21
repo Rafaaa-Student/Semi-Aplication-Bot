@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block title %}Leaderboard - Bot Raffasya VII{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h2>🏆 Green Leaderboard</h2>
+            </div>
+            <div class="card-body">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Rank</th>
+                            <th>User ID</th>
+                            <th>Poin Hijau</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for rank, (user_id, poin) in enumerate(leaderboard, 1) %}
+                        <tr>
+                            <td>{{ rank }}</td>
+                            <td>{{ user_id }}</td>
+                            <td>{{ poin }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
