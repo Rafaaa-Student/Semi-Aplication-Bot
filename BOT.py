@@ -187,6 +187,95 @@ def ambil_banyak_buku(jumlah=25, delay_per_buku=0.5):
         print(f"Error scraping banyak: {e}")
         return hasil_banyak # Kembalikan apa yang sudah didapat sejauh ini
 
+def scrape_buku_baru(jumlah=10):
+    url_base = "https://books.toscrape.com/"
+    url_catalogue = "https://books.toscrape.com/catalogue/"
+    hasil_baru = []
+    max_pages = 50  # Batas maksimal halaman untuk menghindari loop tak berujung
+    pages_scraped = 0
+    listing_url = url_base
+
+    # Muat data lama untuk cek judul yang sudah ada
+    data_lama = []
+    if os.path.exists(CACHE_FILE):
+        with open(CACHE_FILE, "r", encoding="utf-8") as f:
+            try:
+                data_lama = json.load(f)
+            except:
+                data_lama = []
+    judul_ada = {b["judul"] for b in data_lama}
+
+    try:
+        while len(hasil_baru) < jumlah and pages_scraped < max_pages:
+            pages_scraped += 1
+            respon = requests.get(listing_url, timeout=15)
+            if respon.status_code != 200:
+                break
+            
+            soup = BeautifulSoup(respon.text, "html.parser")
+            daftar_buku = soup.find_all("article", class_="product_pod")
+
+            for b in daftar_buku:
+                if len(hasil_baru) >= jumlah:
+                    break
+                
+                try:
+                    link_relatif = b.h3.a["href"]
+                    # Logika cerdas: gabungkan link relatif dengan benar
+                    if "catalogue/" in link_relatif:
+                        link_lengkap = url_base + link_relatif.replace("catalogue/", "catalogue/")
+                    else:
+                        link_lengkap = url_catalogue + link_relatif
+                    
+                    # Bersihkan double slash jika ada
+                    link_lengkap = link_lengkap.replace("catalogue/catalogue/", "catalogue/")
+                except:
+                    continue
+
+                # Scrape detail untuk mendapatkan judul lengkap
+                res_detail = requests.get(link_lengkap, timeout=15)
+                if res_detail.status_code != 200:
+                    continue
+
+                s_detail = BeautifulSoup(res_detail.text, "html.parser")
+                h1 = s_detail.find("h1")
+                if not h1: continue
+                
+                judul = h1.text.strip()
+                
+                # Cek apakah judul sudah ada di database
+                if judul in judul_ada:
+                    continue  # Skip buku yang sudah ada
+                
+                # Jika belum ada, scrape detail lengkap
+                price_el = s_detail.find("p", class_="price_color")
+                harga = price_el.text.strip() if price_el else "N/A"
+                desc_tag = s_detail.find("div", id="product_description")
+                deskripsi = desc_tag.find_next("p").text.strip() if desc_tag and desc_tag.find_next("p") else "N/A"
+
+                buku_baru = {
+                    "judul": judul,
+                    "harga": harga,
+                    "deskripsi": deskripsi,
+                    "url": link_lengkap,
+                }
+                hasil_baru.append(buku_baru)
+                judul_ada.add(judul)  # Tambahkan ke set agar tidak duplikat dalam sesi ini
+                time.sleep(0.5)  # Delay antar buku
+
+            # Cari tombol "Next" untuk pindah halaman
+            next_a = soup.select_one("ul.pager li.next a")
+            if not next_a:
+                break
+            
+            # Update URL untuk halaman berikutnya
+            listing_url = urljoin(listing_url, next_a["href"])
+
+        return hasil_baru
+    except Exception as e:
+        print(f"Error scraping buku baru: {e}")
+        return hasil_baru
+
 # Data
 emoji_list = ["😀", "😂", "🤣", "😍", "🥰", "😎", "🤔", "😴", "🤖", "👻", "🦄", "🌟", "🔥", "🎉", "🍕", "☕", "🏆", "🎮", "🚀"]
 
@@ -323,13 +412,14 @@ def ambil_badge(poin):
 async def auto_scraping_buku():
     print("🔄 Memulai auto-scraping buku...")
     try:
-        # Ambil lebih banyak buku untuk memastikan data baru (scrape 50, ambil 25 yang baru)
-        buku_baru_list = await asyncio.to_thread(ambil_banyak_buku, 50)
+        # Scrape hanya 10 buku baru yang belum ada di database
+        buku_baru_list = await asyncio.to_thread(scrape_buku_baru, 10)
         
         if not buku_baru_list:
-            print("❌ Auto-scraping gagal: Tidak ada data baru.")
+            print("ℹ️ Auto-scraping: Semua buku yang di-scrape sudah ada di database atau tidak ada data baru.")
             return
 
+        # Muat data lama
         data_lama = []
         if os.path.exists(CACHE_FILE):
             with open(CACHE_FILE, "r", encoding="utf-8") as f:
@@ -338,16 +428,9 @@ async def auto_scraping_buku():
                 except:
                     data_lama = []
 
-        judul_ada = {b["judul"] for b in data_lama}  # Gunakan set untuk cek cepat
-        buku_baru_unik = [b for b in buku_baru_list if b["judul"] not in judul_ada][:25]  # Ambil maksimal 25 yang baru
-        
-        if not buku_baru_unik:
-            print("ℹ️ Auto-scraping: Semua buku yang di-scrape sudah ada di database. Tidak ada penambahan.")
-            return
-
         # Tambahkan buku baru ke data_lama
-        data_lama.extend(buku_baru_unik)
-        buku_ditambahkan = len(buku_baru_unik)
+        data_lama.extend(buku_baru_list)
+        buku_ditambahkan = len(buku_baru_list)
         
         if len(data_lama) > 500:
             data_lama = data_lama[-500:]  # Hapus yang lama jika lebih dari 500
