@@ -13,6 +13,8 @@ import datetime
 import socket
 from urllib.parse import urljoin
 from discord import ui
+import aiohttp
+from aiohttp import web
 
 try:
     import certifi
@@ -464,6 +466,86 @@ async def on_ready():
     # Mulai task auto-scraping saat bot ready
     if not auto_scraping_buku.is_running():
         auto_scraping_buku.start()
+    
+    # Start local API server
+    asyncio.create_task(start_api_server())
+
+async def start_api_server():
+    async def send_message_handler(request):
+        try:
+            data = await request.json()
+            channel_id = data.get('channel_id')
+            message = data.get('message')
+            
+            if not channel_id or not message:
+                return web.json_response({'error': 'Missing channel_id or message'}, status=400)
+            
+            channel = bot.get_channel(int(channel_id))
+            if not channel:
+                return web.json_response({'error': 'Channel not found'}, status=404)
+            
+            await channel.send(message)
+            return web.json_response({'status': 'Message sent successfully'})
+        except Exception as e:
+            print(f"Error sending message: {e}")
+            return web.json_response({'error': str(e)}, status=500)
+    
+    async def trigger_scraping_handler(request):
+        try:
+            data = await request.json()
+            jumlah = data.get('jumlah', 10)
+            
+            if jumlah < 1 or jumlah > 100:
+                return web.json_response({'error': 'Jumlah harus antara 1-100'}, status=400)
+            
+            # Jalankan scraping di background
+            buku_baru_list = await asyncio.to_thread(ambil_banyak_buku, jumlah)
+            
+            if not buku_baru_list:
+                return web.json_response({'error': 'Gagal scraping'}, status=500)
+            
+            # Update database
+            data_lama = []
+            if os.path.exists(CACHE_FILE):
+                with open(CACHE_FILE, "r", encoding="utf-8") as f:
+                    try:
+                        data_lama = json.load(f)
+                    except:
+                        data_lama = []
+            
+            data_lama.extend(buku_baru_list)
+            if len(data_lama) > 500:
+                data_lama = data_lama[-500:]
+            
+            with open(CACHE_FILE, "w", encoding="utf-8") as f:
+                json.dump(data_lama, f, indent=4, ensure_ascii=False)
+            
+            return web.json_response({'status': f'Berhasil tambah {len(buku_baru_list)} buku'})
+        except Exception as e:
+            print(f"Error triggering scraping: {e}")
+            return web.json_response({'error': str(e)}, status=500)
+    
+    async def trigger_event_handler(request):
+        try:
+            aksi = random.choice(aksi_sah)
+            event_data = {"aksi_event": aksi, "sudah_klaim": []}
+            simpan_event(event_data)
+            
+            return web.json_response({'status': f'Event dibuat: {aksi}'})
+        except Exception as e:
+            print(f"Error triggering event: {e}")
+            return web.json_response({'error': str(e)}, status=500)
+    
+    app = web.Application()
+    app.router.add_post('/send_message', send_message_handler)
+    app.router.add_post('/trigger_scraping', trigger_scraping_handler)
+    app.router.add_post('/trigger_event', trigger_event_handler)
+    
+    runner = web.AppRunner(app)
+    await runner.setup()
+    site = web.TCPSite(runner, 'localhost', 8080)
+    await site.start()
+    print("Local API server started on http://localhost:8080")
 
 @bot.event
 async def on_command_error(ctx, error):
@@ -1154,13 +1236,14 @@ async def TrueAdminBookDescription(ctx, jumlah: int = 25):
     await ctx.send(f"🚀 **True Admin Mode:** Mengambil **{jumlah}** buku. Proses ini berjalan di *background thread*...")
 
     try:
-        # Menjalankan fungsi blocking (requests) di thread terpisah agar bot gak lag
-        buku_baru_list = await asyncio.to_thread(ambil_banyak_buku, jumlah)
+        # Menjalankan fungsi scraping dengan cek duplikat seperti auto-scraping
+        buku_baru_list = await asyncio.to_thread(scrape_buku_baru, jumlah)
         
         if not buku_baru_list:
-            await ctx.send("❌ Gagal mengambil data. Cek koneksi.")
+            await ctx.send("ℹ️ **Scraping Selesai:** Semua buku yang ditemukan sudah ada di database atau tidak ada data baru.")
             return
 
+        # Muat data lama
         data_lama = []
         if os.path.exists(CACHE_FILE):
             with open(CACHE_FILE, "r", encoding="utf-8") as f:
@@ -1169,14 +1252,12 @@ async def TrueAdminBookDescription(ctx, jumlah: int = 25):
                 except:
                     data_lama = []
 
-        judul_ada = [b["judul"] for b in data_lama]
-        buku_ditambahkan = 0
-
-        for buku in buku_baru_list:
-            if buku["judul"] not in judul_ada:
-                data_lama.append(buku)
-                judul_ada.append(buku["judul"])
-                buku_ditambahkan += 1
+        # Tambahkan buku baru ke data_lama (sudah terfilter unik dari scrape_buku_baru)
+        data_lama.extend(buku_baru_list)
+        buku_ditambahkan = len(buku_baru_list)
+        
+        if len(data_lama) > 500:
+            data_lama = data_lama[-500:]  # Hapus yang lama jika lebih dari 500
 
         with open(CACHE_FILE, "w", encoding="utf-8") as f:
             json.dump(data_lama, f, indent=4, ensure_ascii=False)
