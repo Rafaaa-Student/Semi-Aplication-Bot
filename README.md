@@ -222,4 +222,4 @@ Dibuat oleh anak kelas 7 SMP dengan ilmu:
 - Web Dashboard (Flask + Chart.js)
 - Gamifikasi & Interaksi
 
-🌿 **Bot Zenn VII** - Membangun masa depan hijau dengan teknologi!
+🌿 **Bot RF' VII** - Membangun masa depan hijau dengan teknologi!
