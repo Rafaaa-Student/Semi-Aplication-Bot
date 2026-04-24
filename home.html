@@ -1,107 +1,247 @@
 {% extends "base.html" %}
 
-{% block title %}Home - Bot Zenn VII{% endblock %}
+{% block title %}Portfolio - Raffasya Azka Alfarabi{% endblock %}
 
 {% block content %}
-<div class="row">
+<style>
+    .hero-section {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 80px 0;
+        border-radius: 15px;
+        margin-bottom: 30px;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .hero-section::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+        animation: pulse 4s ease-in-out infinite;
+    }
+    
+    @keyframes pulse {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.1); }
+    }
+    
+    .hero-content {
+        position: relative;
+        z-index: 1;
+    }
+    
+    .profile-image {
+        width: 150px;
+        height: 150px;
+        border-radius: 50%;
+        border: 5px solid white;
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 60px;
+        margin: 0 auto 20px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    }
+    
+    .skill-bar {
+        height: 25px;
+        border-radius: 12px;
+        background: #e9ecef;
+        margin-bottom: 15px;
+        overflow: hidden;
+    }
+    
+    .skill-progress {
+        height: 100%;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        padding-left: 15px;
+        color: white;
+        font-weight: bold;
+        transition: width 1s ease-in-out;
+    }
+    
+    .floating-element {
+        animation: float 3s ease-in-out infinite;
+    }
+    
+    @keyframes float {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-20px); }
+    }
+    
+    .card-hover:hover {
+        transform: translateY(-10px);
+        box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+        transition: all 0.3s ease;
+    }
+    
+    .typing-effect {
+        border-right: 3px solid #667eea;
+        animation: blink 0.7s infinite;
+    }
+    
+    @keyframes blink {
+        0%, 100% { border-color: transparent; }
+        50% { border-color: #667eea; }
+    }
+    
+    .emoji-rain {
+        position: fixed;
+        top: -50px;
+        animation: fall linear forwards;
+        font-size: 30px;
+        pointer-events: none;
+        z-index: 9999;
+    }
+    
+    @keyframes fall {
+        to {
+            transform: translateY(100vh) rotate(360deg);
+        }
+    }
+</style>
+
+<!-- Hero Section -->
+<div class="hero-section">
+    <div class="container hero-content text-center">
+        <div class="profile-image floating-element">👨‍💻</div>
+        <h1 class="display-4 fw-bold mb-3">Raffasya Azka Alfarabi</h1>
+        <p class="lead mb-4">🎓 Kelas 7 SMP | 🏫 SMP Al Kautsar Bandar Lampung | 🇮🇩 Indonesia</p>
+        <p class="mb-4">Young Developer & Tech Enthusiast</p>
+        <div class="d-flex justify-content-center gap-3">
+            <a href="#about" class="btn btn-light btn-lg">Tentang Saya</a>
+            <a href="#projects" class="btn btn-outline-light btn-lg">Proyek</a>
+        </div>
+    </div>
+</div>
+
+<!-- About Section -->
+<div id="about" class="row mb-5">
     <div class="col-md-12">
-        <div class="card">
-            <div class="card-header">
-                <h1>🌍 Selamat Datang di Dashboard Bot Zenn VII</h1>
+        <div class="card card-hover">
+            <div class="card-header bg-primary text-white">
+                <h2 class="mb-0">👋 Tentang Saya</h2>
             </div>
             <div class="card-body">
-                <p>Bot Discord interaktif dengan fitur aksi hijau dan web scraping buku. Dibuat oleh anak kelas 7 SMP! 🚀</p>
                 <div class="row">
-                    <div class="col-md-4">
-                        <div class="card text-white bg-success">
-                            <div class="card-body">
-                                <h5 class="card-title">Total Users</h5>
-                                <p class="card-text">{{ total_users }}</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="card text-white bg-info">
-                            <div class="card-body">
-                                <h5 class="card-title">Total Poin Hijau</h5>
-                                <p class="card-text">{{ total_poin }}</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="card text-white bg-warning">
-                            <div class="card-body">
-                                <h5 class="card-title">Total Books</h5>
-                                <p class="card-text">{{ total_books }}</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <!-- Grafik Statistik -->
-                <div class="row mt-4">
-                    <div class="col-md-12">
-                        <div class="card">
-                            <div class="card-header">
-                                <h5>📊 Statistik Visual</h5>
-                            </div>
-                            <div class="card-body">
-                                <canvas id="statsChart" width="400" height="200"></canvas>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <!-- Web-to-Bot Command -->
-                <div class="row mt-4">
-                    <div class="col-md-12">
-                        <div class="card">
-                            <div class="card-header">
-                                <h5>🤖 Kirim Pesan ke Bot Discord</h5>
-                            </div>
-                            <div class="card-body">
-                                <form id="sendMessageForm">
-                                    <div class="mb-3">
-                                        <label for="channel_id" class="form-label">Channel ID Discord</label>
-                                        <input type="text" class="form-control" id="channel_id" name="channel_id" placeholder="Masukkan ID Channel Discord" required>
-                                    </div>
-                                    <div class="mb-3">
-                                        <label for="message" class="form-label">Pesan</label>
-                                        <textarea class="form-control" id="message" name="message" rows="3" placeholder="Masukkan pesan yang akan dikirim bot" required></textarea>
-                                    </div>
-                                    <button type="submit" class="btn btn-primary">Kirim ke Bot</button>
-                                </form>
-                                <div id="responseMessage" class="mt-3" style="display: none;"></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <!-- Admin Controls -->
-                <div class="row mt-4">
                     <div class="col-md-6">
-                        <div class="card">
-                            <div class="card-header">
-                                <h5>📚 Trigger Scraping Buku</h5>
-                            </div>
-                            <div class="card-body">
-                                <form id="scrapingForm">
-                                    <div class="mb-3">
-                                        <label for="jumlah" class="form-label">Jumlah Buku (1-100)</label>
-                                        <input type="number" class="form-control" id="jumlah" name="jumlah" min="1" max="100" value="10" required>
-                                    </div>
-                                    <button type="submit" class="btn btn-success">Scrape Buku</button>
-                                </form>
-                                <div id="scrapingResponse" class="mt-3" style="display: none;"></div>
-                            </div>
+                        <h4>Halo! Saya Raffasya 👋</h4>
+                        <p>Saya adalah siswa kelas 7 SMP yang passionate dengan teknologi dan programming. Meskipun masih muda, saya sudah belajar banyak hal keren:</p>
+                        <ul class="list-group list-group-flush">
+                            <li class="list-group-item">🤖 Membuat bot Discord interaktif</li>
+                            <li class="list-group-item">🌐 Web scraping dan data collection</li>
+                            <li class="list-group-item">💻 Programming dengan Python</li>
+                            <li class="list-group-item">🎨 Web development dengan Flask</li>
+                            <li class="list-group-item">📊 Data visualization dengan Chart.js</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h4>📍 Lokasi</h4>
+                        <div class="alert alert-info">
+                            <strong>🏫 Sekolah:</strong> SMP Al Kautsar Bandar Lampung<br>
+                            <strong>🌍 Negara:</strong> Indonesia<br>
+                            <strong>🎯 Fokus:</strong> Pembelajaran teknologi & inovasi
+                        </div>
+                        <h4 class="mt-4">🎯 Visi</h4>
+                        <p class="text-muted">"Membangun masa depan hijau dengan teknologi dan terus belajar hal baru setiap hari!"</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Skills Section -->
+<div class="row mb-5">
+    <div class="col-md-12">
+        <div class="card card-hover">
+            <div class="card-header bg-success text-white">
+                <h2 class="mb-0">💪 Keahlian & Skills</h2>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h5>Python Programming</h5>
+                        <div class="skill-bar">
+                            <div class="skill-progress bg-primary" style="width: 85%;">85%</div>
+                        </div>
+                        
+                        <h5>Discord Bot Development</h5>
+                        <div class="skill-bar">
+                            <div class="skill-progress bg-success" style="width: 90%;">90%</div>
+                        </div>
+                        
+                        <h5>Web Scraping</h5>
+                        <div class="skill-bar">
+                            <div class="skill-progress bg-info" style="width: 80%;">80%</div>
                         </div>
                     </div>
                     <div class="col-md-6">
-                        <div class="card">
-                            <div class="card-header">
-                                <h5>🎉 Trigger Event Eksklusif</h5>
-                            </div>
+                        <h5>Flask Web Development</h5>
+                        <div class="skill-bar">
+                            <div class="skill-progress bg-warning" style="width: 75%;">75%</div>
+                        </div>
+                        
+                        <h5>Database Management (JSON)</h5>
+                        <div class="skill-bar">
+                            <div class="skill-progress bg-danger" style="width: 70%;">70%</div>
+                        </div>
+                        
+                        <h5>API Development</h5>
+                        <div class="skill-bar">
+                            <div class="skill-progress bg-secondary" style="width: 65%;">65%</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Projects Section -->
+<div id="projects" class="row mb-5">
+    <div class="col-md-12">
+        <div class="card card-hover">
+            <div class="card-header bg-warning text-dark">
+                <h2 class="mb-0">🚀 Proyek Saya</h2>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6 mb-4">
+                        <div class="card border-primary">
                             <div class="card-body">
-                                <p>Buat event baru tanpa mengirim pesan ke Discord.</p>
-                                <button id="triggerEventBtn" class="btn btn-warning">Buat Event</button>
-                                <div id="eventResponse" class="mt-3" style="display: none;"></div>
+                                <h5 class="card-title">🤖 Bot RF' VII</h5>
+                                <p class="card-text">Bot Discord interaktif dengan fitur:</p>
+                                <ul>
+                                    <li>✅ Gamifikasi aksi hijau</li>
+                                    <li>✅ Web scraping buku</li>
+                                    <li>✅ Dashboard website</li>
+                                    <li>✅ Auto-scraping otomatis</li>
+                                </ul>
+                                <a href="/function" class="btn btn-primary">Lihat Dashboard</a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-4">
+                        <div class="card border-success">
+                            <div class="card-body">
+                                <h5 class="card-title">🌐 Website Dashboard</h5>
+                                <p class="card-text">Dashboard interaktif dengan:</p>
+                                <ul>
+                                    <li>✅ Statistik visual (Chart.js)</li>
+                                    <li>✅ Admin controls</li>
+                                    <li>✅ Search books</li>
+                                    <li>✅ Leaderboard</li>
+                                </ul>
+                                <a href="/function" class="btn btn-success">Coba Fitur</a>
                             </div>
                         </div>
                     </div>
@@ -110,151 +250,140 @@
         </div>
     </div>
 </div>
+
+<!-- Interactive Section -->
+<div class="row mb-5">
+    <div class="col-md-12">
+        <div class="card card-hover">
+            <div class="card-header bg-info text-white">
+                <h2 class="mb-0">🎮 Fitur Interaktif</h2>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4 text-center mb-3">
+                        <button onclick="createEmojiRain()" class="btn btn-lg btn-outline-primary">
+                            🎉 Emoji Rain
+                        </button>
+                    </div>
+                    <div class="col-md-4 text-center mb-3">
+                        <button onclick="changeBackground()" class="btn btn-lg btn-outline-success">
+                            🎨 Ganti Background
+                        </button>
+                    </div>
+                    <div class="col-md-4 text-center mb-3">
+                        <button onclick="showRandomFact()" class="btn btn-lg btn-outline-warning">
+                            💡 Fakta Random
+                        </button>
+                    </div>
+                </div>
+                <div id="fact-display" class="mt-3 text-center" style="display: none;">
+                    <div class="alert alert-info">
+                        <h5 id="fact-text"></h5>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Contact Section -->
+<div class="row mb-5">
+    <div class="col-md-12">
+        <div class="card card-hover">
+            <div class="card-header bg-dark text-white">
+                <h2 class="mb-0">📬 Hubungi Saya</h2>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h4>📧 Email</h4>
+                        <p class="text-muted">raffasya.azkaalfarabi@gmail.com</p>
+                        
+                        <h4>🏫 Sekolah</h4>
+                        <p class="text-muted">SMP Al Kautsar Bandar Lampung</p>
+                        
+                        <h4>🌍 Lokasi</h4>
+                        <p class="text-muted">Indonesia</p>
+                    </div>
+                    <div class="col-md-6">
+                        <h4>🎯 Minat</h4>
+                        <p class="text-muted">Programming, AI, Web Development, Robotics</p>
+                        
+                        <h4>📚 Belajar</h4>
+                        <p class="text-muted">Selalu ingin belajar teknologi baru!</p>
+                        
+                        <h4>💡 Motto</h4>
+                        <p class="text-muted">"Usia bukan penghalang untuk berinovasi!"</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 {% endblock %}
 
 {% block scripts %}
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0"></script>
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const ctx = document.getElementById('statsChart');
-        if (!ctx) {
-            console.error('Canvas element not found');
-            return;
+    // Emoji Rain Effect
+    function createEmojiRain() {
+        const emojis = ['🎉', '🚀', '💻', '🌟', '🎨', '🔥', '💡', '🎮'];
+        for (let i = 0; i < 20; i++) {
+            setTimeout(() => {
+                const emoji = document.createElement('div');
+                emoji.className = 'emoji-rain';
+                emoji.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+                emoji.style.left = Math.random() * 100 + 'vw';
+                emoji.style.animationDuration = (Math.random() * 3 + 2) + 's';
+                document.body.appendChild(emoji);
+                
+                setTimeout(() => emoji.remove(), 5000);
+            }, i * 100);
         }
-        const chartCtx = ctx.getContext('2d');
-        const statsChart = new Chart(chartCtx, {
-            type: 'bar',
-            data: {
-                labels: ['Total Users', 'Total Poin Hijau', 'Total Books'],
-                datasets: [{
-                    label: 'Statistik',
-                    data: [Number("{{ total_users }}"), Number("{{ total_poin }}"), Number("{{ total_books }}")],
-                    backgroundColor: [
-                        'rgba(40, 167, 69, 0.6)',  // Hijau untuk Users
-                        'rgba(23, 162, 184, 0.6)', // Biru untuk Poin
-                        'rgba(255, 193, 7, 0.6)'    // Kuning untuk Books
-                    ],
-                    borderColor: [
-                        'rgba(40, 167, 69, 1)',
-                        'rgba(23, 162, 184, 1)',
-                        'rgba(255, 193, 7, 1)'
-                    ],
-                    borderWidth: 1
-                }]
-            },
-            options: {
-                scales: {
-                    y: {
-                        beginAtZero: true
-                    }
-                },
-                responsive: true,
-                plugins: {
-                    legend: {
-                        display: false
-                    }
-                }
-            }
-        });
-        console.log('Chart created successfully');
-
-        // Handle form submission for sending message to bot
-        const form = document.getElementById('sendMessageForm');
-        const responseDiv = document.getElementById('responseMessage');
+    }
+    
+    // Change Background Color
+    function changeBackground() {
+        const colors = ['#667eea', '#764ba2', '#f093fb', '#f5576c', '#4facfe', '#00f2fe'];
+        const randomColor = colors[Math.floor(Math.random() * colors.length)];
+        document.querySelector('.hero-section').style.background = 
+            `linear-gradient(135deg, ${randomColor} 0%, ${colors[Math.floor(Math.random() * colors.length)]} 100%)`;
+    }
+    
+    // Random Facts
+    const facts = [
+        "Saya belajar programming sejak kelas 6 SD!",
+        "Bot RF' VII sudah memiliki ratusan user!",
+        "Saya bisa scraping data dari website dalam hitungan detik!",
+        "Website ini dibuat dengan Flask dan Bootstrap!",
+        "Saya suka belajar hal baru setiap hari!",
+        "Python adalah bahasa pemrograman favorit saya!",
+        "Saya ingin menjadi software engineer di masa depan!",
+        "Teknologi bisa membuat dunia lebih baik!"
+    ];
+    
+    function showRandomFact() {
+        const factDisplay = document.getElementById('fact-display');
+        const factText = document.getElementById('fact-text');
+        const randomFact = facts[Math.floor(Math.random() * facts.length)];
         
-        form.addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            const formData = new FormData(form);
-            const data = {
-                channel_id: formData.get('channel_id'),
-                message: formData.get('message')
-            };
-            
-            fetch('/send_to_bot', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(data)
-            })
-            .then(response => response.json())
-            .then(data => {
-                responseDiv.style.display = 'block';
-                if (data.status) {
-                    responseDiv.className = 'alert alert-success';
-                    responseDiv.textContent = data.status;
-                } else {
-                    responseDiv.className = 'alert alert-danger';
-                    responseDiv.textContent = data.error;
-                }
-            })
-            .catch(error => {
-                responseDiv.style.display = 'block';
-                responseDiv.className = 'alert alert-danger';
-                responseDiv.textContent = 'Error: ' + error.message;
-            });
-        });
-
-        // Handle scraping form
-        const scrapingForm = document.getElementById('scrapingForm');
-        const scrapingResponse = document.getElementById('scrapingResponse');
+        factText.textContent = randomFact;
+        factDisplay.style.display = 'block';
         
-        scrapingForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            const formData = new FormData(scrapingForm);
-            const data = {
-                jumlah: parseInt(formData.get('jumlah'))
-            };
-            
-            scrapingResponse.style.display = 'block';
-            scrapingResponse.className = 'alert alert-info';
-            scrapingResponse.textContent = 'Sedang scraping... Mohon tunggu.';
-            
-            fetch('/trigger_scraping', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(data)
-            })
-            .then(response => response.json())
-            .then(data => {
-                scrapingResponse.className = data.status ? 'alert alert-success' : 'alert alert-danger';
-                scrapingResponse.textContent = data.status || data.error;
-            })
-            .catch(error => {
-                scrapingResponse.className = 'alert alert-danger';
-                scrapingResponse.textContent = 'Error: ' + error.message;
-            });
-        });
-
-        // Handle trigger event button
-        const triggerEventBtn = document.getElementById('triggerEventBtn');
-        const eventResponse = document.getElementById('eventResponse');
-        
-        triggerEventBtn.addEventListener('click', function() {
-            eventResponse.style.display = 'block';
-            eventResponse.className = 'alert alert-info';
-            eventResponse.textContent = 'Membuat event...';
-            
-            fetch('/trigger_event', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({})
-            })
-            .then(response => response.json())
-            .then(data => {
-                eventResponse.className = data.status ? 'alert alert-success' : 'alert alert-danger';
-                eventResponse.textContent = data.status || data.error;
-            })
-            .catch(error => {
-                eventResponse.className = 'alert alert-danger';
-                eventResponse.textContent = 'Error: ' + error.message;
-            });
+        setTimeout(() => {
+            factDisplay.style.display = 'none';
+        }, 5000);
+    }
+    
+    // Animate skill bars on scroll
+    document.addEventListener('DOMContentLoaded', function() {
+        const skillBars = document.querySelectorAll('.skill-progress');
+        skillBars.forEach(bar => {
+            const width = bar.style.width;
+            bar.style.width = '0%';
+            setTimeout(() => {
+                bar.style.width = width;
+            }, 500);
         });
     });
 </script>
