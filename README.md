@@ -1,4 +1,4 @@
-# Bot RF' VII 
+# Bot RF' VII 🌿🤖
 
 Bot Discord interaktif yang menggabungkan **gamifikasi aksi hijau**, **web scraping**, dan **dashboard website** untuk mendorong gaya hidup ramah lingkungan.
 
@@ -115,7 +115,21 @@ $env:DISCORD_TOKEN="your_bot_token_here"
 DISCORD_TOKEN=your_bot_token_here
 ```
 
-### 3. Menjalankan Bot
+### 3. Migrasi Data (Opsional - jika ada data JSON lama)
+
+Jika Anda memiliki data buku lama dari versi sebelumnya (database_buku_log.json), jalankan migrasi:
+
+```powershell
+# Jalankan script migrasi (sekali saja)
+python migrate_json_to_sqlite.py
+```
+
+Script ini akan:
+- Membaca data dari `database_buku_log.json`
+- Migrasi semua data ke SQLite (`books.db`)
+- Membuat backup file `database_buku_log.json.backup`
+
+### 4. Menjalankan Bot
 
 ```powershell
 # Jalankan bot Discord
@@ -154,16 +168,18 @@ Discord Bot (BOT.py)           Website Dashboard (Flask)
 1. **Bot Discord** menangani perintah users dan scraping
 2. **API Server** (localhost:8080) menyediakan endpoint untuk website
 3. **Website Flask** sebagai interface untuk kontrol bot dan melihat data
-4. **Database JSON** menyimpan data poin users dan koleksi buku
+4. **Database SQLite** menyimpan data buku
 
 ---
 
 ## 📁 Struktur File
 
 ```
-Bot_Raffasya_VII/
+Project_VII/
 ├── BOT.py                    # Main bot Discord dengan API server
 ├── Brain.py                  # AI image classification module (TensorFlow/Keras)
+├── database.py               # SQLite database module untuk buku
+├── migrate_json_to_sqlite.py # Script migrasi data buku dari JSON ke SQLite
 ├── website/
 │   ├── app.py               # Flask web application
 │   ├── templates/           # HTML templates
@@ -175,8 +191,9 @@ Bot_Raffasya_VII/
 │   │   └── search_results.html
 │   └── static/
 │       └── style.css
-├── poin_hijau.json          # Database poin users
-├── database_buku_log.json   # Database koleksi buku
+├── poin_hijau.json          # Database poin users (JSON)
+├── books.db                 # Database SQLite untuk koleksi buku
+├── database_buku_log.json.backup # Backup database buku lama (setelah migrasi)
 ├── .env                     # Environment variables (DISCORD_TOKEN)
 ├── keras_model.h5           # AI model untuk klasifikasi gambar
 ├── labels.txt               # Label classification AI
@@ -223,7 +240,7 @@ Bot_Raffasya_VII/
 
 Dibuat oleh anak kelas 7 SMP (13 tahun) dengan ilmu:
 - Web Scraping (BeautifulSoup)
-- Database (JSON)
+- Database (JSON & SQLite)
 - Bot Discord (discord.py)
 - API Internal (aiohttp)
 - Web Dashboard (Flask + Chart.js)
