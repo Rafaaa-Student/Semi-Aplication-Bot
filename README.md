@@ -49,9 +49,21 @@ Perintah tambahan untuk interaksi santai:
 - **$Bebek**: Gambar bebek random
 - **$Rubah**: Gambar rubah random
 
+### 🤖 Fitur AI Generative
+AI powered by Google Gemini 2.5 Flash untuk tanya jawab:
+
+- **$Zenn <pertanyaan>**: Tanya ke AI Zenn VII tentang lingkungan (Limit: 25/hari untuk user, unlimited untuk admin)
+- **$Zenn_clear**: Hapus riwayat percakapan dengan AI
+- AI mengingat 5 percakapan terakhir untuk konteks yang lebih personal
+- Respon edukatif dengan gaya santai dan ramah lingkungan
+
 ### 🌐 Fitur Website Dashboard
 Dashboard interaktif untuk memantau data bot:
 
+- **Discord OAuth2 Login**: Login/logout dengan akun Discord
+- **Role-based Access Control**: Guest, User, dan Admin roles
+- **AI Chat Interface**: Chat dengan Zenn VII AI langsung dari web (limit 25/hari untuk user, unlimited admin)
+- **Real-time Updates**: SocketIO untuk update data live tanpa refresh
 - **Home**: Statistik total users, poin hijau, koleksi buku dengan grafik visual (Chart.js)
 - **Leaderboard**: Ranking poin hijau users
 - **Books**: Lihat koleksi buku dari database
@@ -105,14 +117,22 @@ pip install -r requirements.txt
 
 ### 2. Setup Environment Variable
 
-Set Discord bot token sebagai environment variable:
+Set environment variables di file `.env`:
 
-```powershell
-# Windows PowerShell
-$env:DISCORD_TOKEN="your_bot_token_here"
+```env
+# Discord Bot
+DISCORD_TOKEN=your_discord_bot_token
 
-# Atau buat file .env
-DISCORD_TOKEN=your_bot_token_here
+# Flask Website
+FLASK_SECRET_KEY=your_flask_secret_key
+
+# Discord OAuth2
+DISCORD_CLIENT_ID=your_discord_client_id
+DISCORD_CLIENT_SECRET=your_discord_client_secret
+ADMIN_DISCORD_ID=your_admin_discord_id
+
+# Google Gemini AI
+GEMINI_API_KEY=your_gemini_api_key
 ```
 
 ### 3. Migrasi Data (Opsional - jika ada data JSON lama)
@@ -185,6 +205,8 @@ Project_VII/
 │   ├── templates/           # HTML templates
 │   │   ├── base.html
 │   │   ├── home.html
+│   │   ├── function.html
+│   │   ├── chat.html
 │   │   ├── leaderboard.html
 │   │   ├── books.html
 │   │   ├── search_books.html
@@ -244,10 +266,13 @@ Dibuat oleh anak kelas 7 SMP (13 tahun) dengan ilmu:
 - Bot Discord (discord.py)
 - API Internal (aiohttp)
 - Web Dashboard (Flask + Chart.js)
+- Real-time Communication (Flask-SocketIO)
 - AI/ML (TensorFlow/Keras - Image Classification)
+- AI Generative (Google Gemini 2.5 Flash)
+- Discord OAuth2 Authentication
 - Environment Variables (python-dotenv)
 - Gamifikasi & Interaksi
 - CSS 3D Effects & Dark Mode
 - HTML/CSS/JavaScript
 
-🌿 **Bot RF' VII** - Membangun masa depan hijau dengan teknologi!
+🌿 **Bot/AI Zenn' VII** - Membangun masa depan hijau dengan teknologi!
