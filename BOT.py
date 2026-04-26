@@ -15,12 +15,15 @@ from urllib.parse import urljoin
 from discord import ui
 import aiohttp
 from aiohttp import web
-from Brain import check_image
+from Brain import check_image, tanyakan_zenn, jelaskan_sampah
 from dotenv import load_dotenv
-from database import add_book, get_books, search_books, book_exists, get_random_book
+from database import add_book, get_books, search_books, book_exists, get_random_book, save_conversation, get_conversation_history, check_ai_limit, increment_ai_count
 
 # Load environment variables from .env file
 load_dotenv()
+
+# Get admin Discord ID for AI limit bypass
+ADMIN_DISCORD_ID = os.getenv('ADMIN_DISCORD_ID', '')
 
 try:
     import certifi
@@ -387,6 +390,19 @@ def tambah_poin(user_id, jumlah=1):
     uid = str(user_id)
     data[uid] = data.get(uid, 0) + jumlah
     simpan_poin(data)
+    
+    # Emit SocketIO event for real-time update
+    try:
+        import requests
+        requests.post('http://localhost:5000/emit_update', json={
+            'type': 'points_update',
+            'user_id': uid,
+            'new_points': data[uid],
+            'total_users': len(data),
+            'total_points': sum(data.values())
+        }, timeout=2)
+    except Exception as e:
+        print(f"Failed to emit SocketIO event: {e}")
 
 def ambil_poin(user_id):
     return muat_poin().get(str(user_id), 0)
@@ -556,23 +572,25 @@ async def Start(ctx):
 """📌 **Daftar Perintah Bot** 📌
 Bot ini memiliki berbagai perintah seru yang bisa kamu coba! Berikut adalah daftar perintah yang tersedia:
 
-0. `$Halo` - Menyapa bot.
-1. `$Goodbye` - Balasan emot 😊.
-2. `$Apalah` - Mengulang "he" sesuai jumlah yang diberikan.
-3. `$Passgen <jumlah>` - Membuat password acak dengan simbol.
-4. `$Menambahkan <angka1> <angka2>` - Menjumlahkan dua angka.
-5. `$Dadu` - Mengocok dadu 1-6 dan beri respons acak.
-6. `$Ulang <jumlah> <kata>` - Mengulang kata beberapa kali.
-7. `$Emoji` - Memberi emoji acak.
-8. `$Koin` - Melempar koin (Kepala/Ekor).
-9. `$Bebek` - Mengirimkan gambar bebek random 🦆.
-10. `$Rubah` - Mengirimkan gambar rubah random 🦊.
-11. `$Website` - Kunjungi website dashboard bot untuk info lebih lengkap.
-14. `$FungsiHijau` - Menampilkan daftar perintah terkait fitur hijau.
-15. `$FungsiScraping` - Menampilkan daftar perintah terkait fitur web scraping.
+1. `$Halo` - Menyapa bot.
+2. `$Goodbye` - Balasan emot 😊.
+3. `$Apalah` - Mengulang "he" sesuai jumlah yang diberikan.
+4. `$Passgen <jumlah>` - Membuat password acak dengan simbol.
+5. `$Menambahkan <angka1> <angka2>` - Menjumlahkan dua angka.
+6. `$Dadu` - Mengocok dadu 1-6 dan beri respons acak.
+7. `$Ulang <jumlah> <kata>` - Mengulang kata beberapa kali.
+8. `$Emoji` - Memberi emoji acak.
+9. `$Koin` - Melempar koin (Kepala/Ekor).
+10. `$Bebek` - Mengirimkan gambar bebek random 🦆.
+11. `$Rubah` - Mengirimkan gambar rubah random 🦊.
+12. `$Website` - Kunjungi website dashboard bot untuk info lebih lengkap.
+13. `$FungsiHijau` - Menampilkan daftar perintah terkait fitur hijau.
+14. `$FungsiScraping` - Menampilkan daftar perintah terkait fitur web scraping.
+15. `$Zenn <pertanyaan>` - Tanya ke AI Zenn VII tentang lingkungan! AI akan mengingat percakapanmu.
 
 📝 Catatan:
 - Untuk `$Ulang`, contoh: `$Ulang 3 Halo` → Maka akan mengulang "Halo" sebanyak 3 kali.
+- Untuk `$Zenn`, contoh: `$Zenn apa itu global warming?` → AI akan menjawab dengan gaya santai dan edukatif.
 """
 )
 
@@ -588,9 +606,9 @@ async def FungsiHijau(ctx):
 4. `$Leaderboard` - Melihat pengguna dengan poin tertinggi dalam aksi hijau.
 5. `$Add_Action <nama aksi>` - Mengusulkan aksi hijau baru ke daftar aksi yang sah.
 6. `$Event` - Menambah event eksklusif.
-7. `$Claim` - Membuat Aktivitas sesuai yang berada dalam event(HANYA 1 ORANG PERTAMA YANG BISA KLAIM!).
+7. `$Claim <cerita>` - Membuat Aktivitas sesuai yang berada dalam event(HANYA 1 ORANG PERTAMA YANG BISA KLAIM!).
 8. `$Levelbadge` - Menampilkan List badge yang bisa didapat di permainan.
-9. `$Story` - Storytelling tentang aktivitas menghijaukan lingkungan yang kamu lakukan.
+9. `$Story <cerita>` - Storytelling tentang aktivitas menghijaukan lingkungan yang kamu lakukan.
 10. `$Pilah <nama_sampah>` - Mengetahui kategori sampah (organik/anorganik/berbahaya).
 11. `$Kategori` - Melihat isi kategori sampah.
 12. `$Tambah_Kategori <kategori> <nama_sampah>` - Menambahkan sampah baru ke kategori.
@@ -599,6 +617,8 @@ async def FungsiHijau(ctx):
 
 📝 Catatan:
 - Untuk `$Tambah_Kategori`, contoh: `$Tambah_Kategori organik pisang` → Menambahkan "pisang" ke kategori "organik".
+- Untuk `$Claim`, contoh: `$Claim hari ini saya menanam pohon di halaman rumah` → Cerita harus minimal 20 kata dan sesuai aksi event.
+- Untuk `$Scan`, upload gambar sampah lalu ketik `$Scan` → AI akan menganalisis dan memberikan kategori.
 """
 )
 
@@ -610,9 +630,13 @@ async def FungsiScraping(ctx):
 🕸️ **Fitur Web Scraping:**
 1. `$Quotes` - Mengambil dan menampilkan kata-kata mutiara dari website.
 2. `$Books` - Mencari rekomendasi buku dari website Books to Scrape (dengan cooldown 30 menit).
-3. `$BookDescription` - Buku acak **cepat** dari website Books to Scrape dengan deskripsi singkat.
+3. `$BookDescription` - Buku acak **cepat** dari database SQLite dengan deskripsi lengkap.
 4. `$FindBooks <keyword>` - Cari buku dari database lokal berdasarkan keyword (judul/deskripsi).
 5. `$WebScraping` - Menjelaskan apa itu web scraping dan bagaimana fitur ini bekerja di bot.
+
+📝 Catatan:
+- Untuk `$FindBooks`, contoh: `$FindBooks python` → Akan menampilkan daftar buku yang mengandung kata "python".
+- `$BookDescription` lebih cepat karena membaca dari database lokal, bukan scraping langsung ke website.
 """
 )
 
@@ -1091,6 +1115,79 @@ async def BookDescription(ctx):
     msg += f"🔗 **Link Lengkap:** <{url}>"
     await ctx.send(msg)
 
+@bot.command()
+async def Zenn(ctx, *, pertanyaan: str):
+    """
+    Tanya ke AI Zenn VII - asisten lingkungan yang keren dan santai! 🌿
+    AI akan mengingat percakapan sebelumnya untuk jawaban yang lebih personal.
+    Limit: 25 pertanyaan per hari (Admin: unlimited)
+    """
+    if not pertanyaan.strip():
+        await ctx.send("⚠️ **Masukkan pertanyaan kamu!** Contoh: `$zenn apa itu global warming?")
+        return
+    
+    user_id = str(ctx.author.id)
+    
+    # Check AI usage limit (The Guard System)
+    can_use, remaining, message = check_ai_limit(user_id, ADMIN_DISCORD_ID, daily_limit=25)
+    
+    if not can_use:
+        await ctx.send(f"🚫 **Limit Harian Tercapai!**\n\n{message}")
+        return
+    
+    # Increment AI usage count
+    increment_ai_count(user_id)
+    
+    # Show remaining uses to user
+    if remaining != float('inf'):
+        await ctx.send(f"📊 **Sisa Kuota AI Hari Ini:** {int(remaining)}/25")
+    
+    # Simpan pesan user ke database (memory)
+    save_conversation(user_id, 'user', pertanyaan)
+    
+    # Ambil riwayat percakapan untuk context
+    history = get_conversation_history(user_id, limit=5)
+    
+    # Kirim pesan "sedang berpikir"
+    thinking_msg = await ctx.send("🤖 **Zenn VII sedang berpikir...** 🌿")
+    
+    try:
+        # Panggil AI dengan history
+        jawaban = await tanyakan_zenn(pertanyaan, conversation_history=history)
+        
+        # Simpan jawaban AI ke database (memory)
+        save_conversation(user_id, 'assistant', jawaban)
+        
+        # Hapus pesan "sedang berpikir"
+        try:
+            await thinking_msg.delete()
+        except discord.NotFound:
+            # Message already deleted, ignore
+            pass
+        
+        # Kirim jawaban
+        msg = f"🌿 **Zenn VII berkata:**\n\n{jawaban}"
+        await ctx.send(msg)
+        
+    except Exception as e:
+        try:
+            await thinking_msg.delete()
+        except discord.NotFound:
+            # Message already deleted, ignore
+            pass
+        await ctx.send(f"❌ **Error:** Terjadi masalah saat memproses pertanyaan. Coba lagi nanti ya!")
+        print(f"AI Error: {e}")
+        print(f"Error type: {type(e).__name__}")
+        import traceback
+        traceback.print_exc()
+
+@bot.command()
+async def Zenn_clear(ctx):
+    """Hapus riwayat percakapan dengan Zenn VII."""
+    user_id = str(ctx.author.id)
+    clear_conversation(user_id)
+    await ctx.send("🗑️ **Riwayat percakapan dengan Zenn VII telah dihapus!** Zenn akan mulai fresh dari awal.")
+
 class BookSelect(ui.Select):
     def __init__(self, books, ctx):
         self.books = books
@@ -1224,7 +1321,7 @@ async def Scan(ctx):
             # Debug: print hasil prediksi
             print(f"DEBUG: Label={label}, Score={score}")
             
-            # 3. Logika Poin
+            # 3. Logika Poin dengan Gemini AI untuk penjelasan
             if "Target" in label and score > 0.90:
                 # Tambah poin ke user
                 user_id = str(ctx.author.id)
@@ -1239,7 +1336,33 @@ async def Scan(ctx):
                 with open(POIN_FILE, "w", encoding="utf-8") as f:
                     json.dump(poin_data, f, indent=4, ensure_ascii=False)
                 
-                await ctx.send(f"✅ AI Yakin ini {label} sampahnya ({score*100:.0f}%). +10 Poin! 🌿")
+                # Kirim pesan "sedang berpikir" untuk penjelasan AI
+                thinking_msg = await ctx.send("🤖 **Zenn VII sedang menganalisis...** 🌿")
+                
+                try:
+                    # Panggil Gemini AI untuk penjelasan yang bervariasi
+                    penjelasan = await jelaskan_sampah(label, score)
+                    
+                    # Hapus pesan "sedang berpikir"
+                    try:
+                        await thinking_msg.delete()
+                    except discord.NotFound:
+                        # Message already deleted, ignore
+                        pass
+                    
+                    # Kirim penjelasan dari Gemini + info poin
+                    msg = f"{penjelasan}\n\n✅ **+10 Poin!** 🌿"
+                    await ctx.send(msg)
+                    
+                except Exception as e:
+                    try:
+                        await thinking_msg.delete()
+                    except discord.NotFound:
+                        # Message already deleted, ignore
+                        pass
+                    # Fallback ke pesan standar jika Gemini error
+                    await ctx.send(f"✅ AI Yakin ini {label} sampahnya ({score*100:.0f}%). +10 Poin! 🌿")
+                    print(f"AI Error: {e}")
             else:
                 await ctx.send(f"❌ AI tidak yakin ini sampah (Label: {label}, Confidence: {score*100:.0f}%). Coba foto lebih dekat!")
         except Exception as e:
