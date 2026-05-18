@@ -1,6 +1,6 @@
 # Zenn' VII 🌿🤖
 
-Halo,Saya adalah pembuat proyek mandiri ini.
+Halo, Saya adalah pembuat proyek mandiri ini.
 Saya membuat proyek ini dengan tujuan untuk mengedukasi anak-anak untuk bisa menjaga lingkungan dan menjadi pribadi yang lebih baik. 
 Saya menggabungkan beberapa teknologi seperti AI, Discord Bot, dan Website khusus untuk membuat proyek ini.
 
